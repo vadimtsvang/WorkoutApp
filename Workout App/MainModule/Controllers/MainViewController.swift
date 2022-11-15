@@ -15,6 +15,7 @@ class MainViewController: UIViewController {
         imageView.backgroundColor = .specialBackground
         imageView.layer.borderColor = UIColor.white.cgColor
         imageView.layer.borderWidth = 5
+        imageView.clipsToBounds = true
         return imageView
     }()
     
@@ -71,12 +72,20 @@ class MainViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         selectItem(date: Date())
+        setupUserParameters()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        showOnboarding()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         setConstraints()
+        getWeather()
     }
     
     private func setupViews() {
@@ -119,6 +128,51 @@ class MainViewController: UIViewController {
             tableView.isHidden = false
         }
     }
+    
+    private func setupUserParameters() {
+        
+        let userArray = RealmManager.shared.getResultsUserModel()
+        
+        if userArray.count != 0 {
+            userNameLabel.text = userArray[0].userFirstName + " " + userArray[0].userSecondName
+            
+            guard let data = userArray[0].userImage,
+                  let image = UIImage(data: data) else {
+                return
+            }
+            userPhotoImageView.image = image
+        }
+    }
+    
+    private func showOnboarding() {
+        let userDefaults = UserDefaults.standard
+        let onBoardingWasViewed = userDefaults.bool(forKey: "OnBoardingWasViewed")
+        if onBoardingWasViewed == false {
+            let onboardingViewController = OnboardingViewController()
+            onboardingViewController.modalPresentationStyle = .fullScreen
+            present(onboardingViewController, animated: false)
+        }
+    }
+    
+    private func getWeather() {
+        NetworkDataFetch.shared.fetchWeather { [weak self] result, error in
+            guard let self = self else { return }
+            if let model = result {
+                print(model)
+                self.weatherView.updateLabels(model: model)
+                
+                NetworkImageRequest.shared.requestData(id: model.weather[0].icon) { [weak self] result in
+                    guard let self = self else { return }
+                    switch result {
+                    case .success(let data):
+                        self.weatherView.updateImage(data: data)
+                    case .failure(let error):
+                        print(error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
 }
 
 //MARK: - CalendarViewProtocol
@@ -147,7 +201,17 @@ extension MainViewController: MainTableViewProtocol {
 
 extension MainViewController: WorkoutCellProtocol {
     func startButtonTapped(model: WorkoutModel) {
-        print(model)
+        if model.workoutTimer == 0 {
+            let repsWorkoutViewController = RepsWorkoutViewController()
+            repsWorkoutViewController.modalPresentationStyle = .fullScreen
+            repsWorkoutViewController.setWorkoutModel(model)
+            present(repsWorkoutViewController, animated: true)
+        } else {
+            let timerWorkoutViewController = TimerWorkoutViewController()
+            timerWorkoutViewController.modalPresentationStyle = .fullScreen
+            timerWorkoutViewController.setWorkoutModel(model)
+            present(timerWorkoutViewController, animated: true)
+        }
     }
 }
 

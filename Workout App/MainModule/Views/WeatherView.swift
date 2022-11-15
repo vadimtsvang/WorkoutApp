@@ -54,6 +54,22 @@ class WeatherView: UIView {
         layer.cornerRadius = 10
         addSubviews(weatherLabel, weatherDiscriptionLabel, weatherImageView)
     }
+    
+    public func updateImage(data: Data) {
+        guard let image = UIImage(data: data) else { return }
+        weatherImageView.image = image
+    }
+    
+    public func updateLabels(model: WeatherModel) {
+        weatherLabel.text = model.weather[0].myDescription + " \(model.main.temperatureCesius)C"
+        
+        switch model.weather[0].weatherDescription {
+        case "broken clouds":
+            weatherDiscriptionLabel.text = "Лучше остаться дома и провести домашнюю тренировку"
+        default:
+            weatherDiscriptionLabel.text = "No data"
+        }
+    }
 }
 
 extension WeatherView {

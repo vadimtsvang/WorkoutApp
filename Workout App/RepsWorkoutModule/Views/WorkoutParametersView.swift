@@ -1,13 +1,18 @@
 //
-//  StartedDetailsView.swift
+//  WorkoutParametersView.swift
 //  Workout App
 //
-//  Created by Vadim on 23.10.2022.
+//  Created by Vadim on 18.10.2022.
 //
 
 import UIKit
 
-class StartedDetailsView: UIView {
+protocol NextSetProtocol: AnyObject {
+    func nextSetTapped()
+    func editingTapped()
+}
+
+class WorkoutParametersView: UIView {
     
     private let detailsLabel = UILabel(text: "Details")
     
@@ -19,9 +24,9 @@ class StartedDetailsView: UIView {
         return view
     }()
     
-    private let nameLabel = UILabel(text: "Squats", font: .robotoMedium24(), textColor: .specialGray)
+    private let workoutNameLabel = UILabel(text: "Name", font: .robotoMedium24(), textColor: .specialGray)
     private let setsLabel = UILabel(text: "Sets", font: .robotoMedium18(), textColor: .specialGray)
-    private let setsResultLabel = UILabel(text: "1/4", font: .robotoMedium24(), textColor: .specialGray)
+    private let numberOfSetsLabel = UILabel(text: "1/4", font: .robotoMedium24(), textColor: .specialGray)
     
     private let lineView: UIView = {
         let view = UIView()
@@ -30,8 +35,8 @@ class StartedDetailsView: UIView {
         return view
     }()
     
-    private let timeOfSetLabel = UILabel(text: "Time of Set", font: .robotoMedium18(), textColor: .specialGray)
-    private let timeLabel = UILabel(text: "1 min 30 sec", font: .robotoMedium24(), textColor: .specialGray)
+    private let repsLabel = UILabel(text: "Reps", font: .robotoMedium18(), textColor: .specialGray)
+    private let numberOfRepsLabel = UILabel(text: "20", font: .robotoMedium24(), textColor: .specialGray)
     
     private let secondLineView: UIView = {
         let view = UIView()
@@ -42,9 +47,9 @@ class StartedDetailsView: UIView {
     
     private lazy var editButton: UIButton = {
         let button = UIButton()
-        button.setImage(UIImage(named: "pencil"), for: .normal)
+        button.setImage(UIImage(named: "pencil")?.withRenderingMode(.alwaysOriginal), for: .normal)
         button.setTitle("Editing", for: .normal)
-        button.setTitleColor(.specialLightBrown, for: .normal)
+        button.tintColor = .specialLightBrown
         button.titleLabel?.font = .robotoMedium16()
         button.addTarget(self, action: #selector(editButtonTapped), for: .touchUpInside)
         button.toAutoLayout()
@@ -56,7 +61,7 @@ class StartedDetailsView: UIView {
         button.setTitle("Next Set".uppercased(), for: .normal)
         button.titleLabel?.font = .robotoBold16()
         button.backgroundColor = .specialDarkYellow
-        button.setTitleColor(.specialGray, for: .normal)
+        button.tintColor = .specialGray
         button.addTarget(self, action: #selector(nextSetButtonTapped), for: .touchUpInside)
         button.layer.cornerRadius = 10
         button.toAutoLayout()
@@ -65,6 +70,8 @@ class StartedDetailsView: UIView {
     
     var setsStackView = UIStackView()
     var repsStackView = UIStackView()
+    
+    weak var cellNextSetDelegate: NextSetProtocol?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -80,23 +87,29 @@ class StartedDetailsView: UIView {
     private func setupViews() {
         toAutoLayout()
         
-        addSubviews(detailsLabel, backView, nameLabel)
+        addSubviews(detailsLabel, backView, workoutNameLabel)
         
-        setsStackView = UIStackView(arrangedSubviews: [setsLabel, setsResultLabel], axis: .horizontal, spacing: 10)
-        repsStackView = UIStackView(arrangedSubviews: [timeOfSetLabel, timeLabel], axis: .horizontal, spacing: 10)
+        setsStackView = UIStackView(arrangedSubviews: [setsLabel, numberOfSetsLabel], axis: .horizontal, spacing: 10)
+        repsStackView = UIStackView(arrangedSubviews: [repsLabel, numberOfRepsLabel], axis: .horizontal, spacing: 10)
         backView.addSubviews(setsStackView, lineView, repsStackView, secondLineView, editButton, nextSetButton)
     }
     
     @objc private func editButtonTapped() {
-        print("editButtonTapped")
+        cellNextSetDelegate?.editingTapped()
     }
     
     @objc private func nextSetButtonTapped() {
-        print("nextSetButtonTapped")
+        cellNextSetDelegate?.nextSetTapped()
+    }
+    
+    public func refreshLabels(model: WorkoutModel, numberOfSet: Int) {
+        workoutNameLabel.text = model.workoutName
+        numberOfSetsLabel.text = "\(numberOfSet)/\(model.workoutSets)"
+        numberOfRepsLabel.text = "\(model.workoutReps)"
     }
 }
 
-extension StartedDetailsView {
+extension WorkoutParametersView {
     
     private func setConstraints() {
         NSLayoutConstraint.activate([
@@ -111,10 +124,10 @@ extension StartedDetailsView {
             backView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
             backView.heightAnchor.constraint(equalToConstant: 240),
             
-            nameLabel.topAnchor.constraint(equalTo: backView.topAnchor, constant: 15),
-            nameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            workoutNameLabel.topAnchor.constraint(equalTo: backView.topAnchor, constant: 15),
+            workoutNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             
-            setsStackView.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 15),
+            setsStackView.topAnchor.constraint(equalTo: workoutNameLabel.bottomAnchor, constant: 15),
             setsStackView.leadingAnchor.constraint(equalTo: backView.leadingAnchor, constant: 15),
             setsStackView.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -15),
             
